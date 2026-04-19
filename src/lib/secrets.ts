@@ -1,4 +1,4 @@
-import { User, Notebook } from '../types';
+import type { User, Notebook } from '../types';
 
 /**
  * ATENÇÃO: Este arquivo é um wrapper para Variáveis de Ambiente.
