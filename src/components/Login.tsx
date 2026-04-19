@@ -82,7 +82,7 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
           <div style={styles.iconWrapper}>
             <PenTool size={28} />
           </div>
-          <h1 style={styles.title}>Workspace</h1>
+          <h1 style={styles.title}>StudyBook</h1>
           <p style={styles.subtitle}>
             Organize suas ideias em um ambiente limpo e focado.
           </p>
