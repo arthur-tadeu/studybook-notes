@@ -105,6 +105,16 @@ function App() {
     }
   };
 
+  const deleteNotebook = async (id: string) => {
+    if (!user || isSecret) return;
+    try {
+      const { deleteNotebookFromFirestore } = await import('./lib/firestore');
+      await deleteNotebookFromFirestore(user.uid, id);
+    } catch (error) {
+      console.error('Erro ao excluir do Firestore:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ height: '100vh', width: '100vw', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0c0c0e' }}>
@@ -150,6 +160,7 @@ function App() {
       onLogout={handleLogout}
       notebooks={notebooks}
       setNotebooks={setNotebooks}
+      deleteNotebook={deleteNotebook}
       activeNotebookId={activeNotebookId}
       setActiveNotebookId={setActiveNotebookId}
       activePageId={activePageId}

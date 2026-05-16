@@ -1,8 +1,13 @@
 import { useState } from 'react';
-import { PenTool, Notebook as NotebookIcon, ShieldAlert, Sun, Moon, Eye, EyeOff, AlertTriangle, User as UserIcon, Mail, Lock } from 'lucide-react';
+import { PenTool, Notebook as NotebookIcon, ShieldAlert, Sun, Moon, Eye, EyeOff, AlertTriangle, Lock, Mail } from 'lucide-react';
 import { styles } from '../styles/Login.styles';
 import { auth } from '../lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword 
+} from 'firebase/auth';
 import type { User } from '../types';
 
 interface LoginProps {
@@ -15,11 +20,11 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showVisitorModal, setShowVisitorModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   
-  // Easter Egg states
-  const [username, setUsername] = useState('');
+  // Auth states
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [gmail, setGmail] = useState('');
 
   const handleGoogleLogin = async () => {
     setError('');
@@ -32,24 +37,45 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
       if (err?.code === 'auth/invalid-api-key' || err?.message?.includes('mock-key')) {
         setError('O Firebase não está configurado. Use o modo visitante ou configure o .env.');
       } else {
-        setError('Houve um erro ao tentar acessar com o Google.');
+        setError('Erro ao entrar com Google. Verifique sua conexão.');
       }
     }
   };
 
-  const handleEasterEggLogin = (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Normalização rigorosa para o Easter Egg
-    const userClean = username.trim();
-    const passClean = password.trim();
-    const gmailClean = gmail.trim();
+    if (!email || !password) {
+      setError('Preencha todos os campos.');
+      return;
+    }
 
-    if (userClean === 'Leyley' && passClean === 'euteamocaramia' && gmailClean === '') {
-      (window as any).isSecretMode = true;
+    setError('');
+    setLoading(true);
+
+    try {
+      // Tenta fazer login
+      await signInWithEmailAndPassword(auth, email, password);
       onLogin();
-    } else {
-      setError('Credenciais incorretas.');
+    } catch (err: any) {
+      // Se o usuário não existir, tenta criar a conta automaticamente (simplificado)
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          await createUserWithEmailAndPassword(auth, email, password);
+          onLogin();
+        } catch (createErr: any) {
+          if (createErr.code === 'auth/weak-password') {
+            setError('A senha deve ter pelo menos 6 caracteres.');
+          } else if (createErr.code === 'auth/email-already-in-use') {
+            setError('Senha incorreta para este e-mail.');
+          } else {
+            setError('Erro ao autenticar. Tente novamente.');
+          }
+        }
+      } else {
+        setError('E-mail ou senha inválidos.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -95,18 +121,19 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
           </div>
         )}
 
-        <form onSubmit={handleEasterEggLogin} style={styles.inputGroup}>
+        <form onSubmit={handleEmailLogin} style={styles.inputGroup}>
           <div style={styles.inputWrapper}>
             <div style={styles.leftIcon}>
-              <UserIcon size={18} />
+              <Mail size={18} />
             </div>
             <input 
-              type="text" 
-              placeholder="Usuário" 
+              type="email" 
+              placeholder="E-mail" 
               className="input-base" 
               style={{ paddingLeft: '44px' }}
-              value={username}
-              onChange={e => setUsername(e.target.value)}
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
             />
           </div>
           <div style={styles.inputWrapper}>
@@ -120,6 +147,7 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
               style={{ paddingLeft: '44px', paddingRight: '44px' }}
               value={password}
               onChange={e => setPassword(e.target.value)}
+              required
             />
             <button 
               type="button" 
@@ -129,21 +157,13 @@ export default function Login({ onLogin, isDark, setIsDark }: LoginProps) {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <div style={styles.inputWrapper}>
-            <div style={styles.leftIcon}>
-              <Mail size={18} />
-            </div>
-            <input 
-              type="text" 
-              placeholder="Gmail" 
-              className="input-base" 
-              style={{ paddingLeft: '44px' }}
-              value={gmail}
-              onChange={e => setGmail(e.target.value)}
-            />
-          </div>
-          <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>
-            Entrar
+          <button 
+            type="submit" 
+            className="btn btn-primary" 
+            style={{ marginTop: '10px' }}
+            disabled={loading}
+          >
+            {loading ? 'Acessando...' : 'Entrar ou Cadastrar'}
           </button>
         </form>
 

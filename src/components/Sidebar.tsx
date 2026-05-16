@@ -7,6 +7,7 @@ interface SidebarProps {
   onLogout: () => void;
   notebooks: Notebook[];
   setNotebooks: React.Dispatch<React.SetStateAction<Notebook[]>>;
+  deleteNotebook: (id: string) => void;
   activeNotebookId: string | null;
   setActiveNotebookId: (id: string | null) => void;
   setActivePageId: (id: string | null) => void;
@@ -17,7 +18,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ 
-  user, onLogout, notebooks, setNotebooks, 
+  user, onLogout, notebooks, setNotebooks, deleteNotebook,
   activeNotebookId, setActiveNotebookId, setActivePageId, 
   onViewProfile, onSelectNotebook, isDark, setIsDark 
 }: SidebarProps) {
@@ -55,6 +56,7 @@ export default function Sidebar({
     if (confirm('Tem certeza que deseja excluir este caderno e todas as suas páginas?')) {
       const newNotebooks = notebooks.filter(nb => nb.id !== id);
       setNotebooks(newNotebooks);
+      deleteNotebook(id);
       if (activeNotebookId === id) {
         setActiveNotebookId(null);
         setActivePageId(null);

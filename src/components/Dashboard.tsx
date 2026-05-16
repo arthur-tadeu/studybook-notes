@@ -9,6 +9,7 @@ interface DashboardProps {
   onLogout: () => void;
   notebooks: Notebook[];
   setNotebooks: React.Dispatch<React.SetStateAction<Notebook[]>>;
+  deleteNotebook: (id: string) => void;
   activeNotebookId: string | null;
   setActiveNotebookId: (id: string | null) => void;
   activePageId: string | null;
