@@ -15,10 +15,25 @@ import type { Notebook } from '../types';
  */
 export const saveNotebookToFirestore = async (uid: string, notebook: Notebook) => {
   try {
+    // Validação extra e log de integridade
+    const pages = notebook.pages || [];
+    console.log(`📡 [Firestore Save] Caderno: "${notebook.name}" | Páginas: ${pages.length}`);
+    
+    // Log do primeiro parágrafo de cada página para conferência
+    pages.forEach((p, i) => {
+      console.log(`   📄 Página ${i+1}: "${p.title}" | Conteúdo (preview): ${p.content?.substring(0, 30)}...`);
+    });
+
     const notebookRef = doc(db, `users/${uid}/notebooks`, notebook.id);
-    await setDoc(notebookRef, notebook, { merge: true });
-  } catch (error) {
-    console.error('Erro ao salvar caderno no Firestore:', error);
+    const dataToSave = JSON.parse(JSON.stringify({
+      ...notebook,
+      pages: pages // Garantir que as páginas estão no objeto
+    }));
+    
+    await setDoc(notebookRef, dataToSave, { merge: true });
+    return true;
+  } catch (error: any) {
+    console.error('❌ Erro crítico ao salvar no Firestore:', error.code, error.message);
     throw error;
   }
 };
@@ -29,11 +44,19 @@ export const saveNotebookToFirestore = async (uid: string, notebook: Notebook) =
 export const getUserNotebooksFromFirestore = async (uid: string): Promise<Notebook[]> => {
   try {
     const notebooksRef = collection(db, `users/${uid}/notebooks`);
-    // Removendo o orderBy da query para evitar erros de índice no Firestore
     const querySnapshot = await getDocs(notebooksRef);
     
-    const notebooks = querySnapshot.docs.map(doc => doc.data() as Notebook);
-    // Ordena em memória para garantir consistência sem precisar de índices extras
+    const notebooks = querySnapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        // Blindagem: Garantir que 'pages' sempre seja um array, mesmo que venha nulo do banco
+        pages: Array.isArray(data.pages) ? data.pages : []
+      } as Notebook;
+    });
+
+    console.log(`📥 [Firestore Load] ${notebooks.length} cadernos carregados.`);
     return notebooks.sort((a, b) => b.createdAt - a.createdAt);
   } catch (error) {
     console.error('Erro ao buscar cadernos no Firestore:', error);
