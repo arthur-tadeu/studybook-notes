@@ -89,22 +89,20 @@ function App() {
 
   // Sincronizar mudanças com Firestore (Debounced)
   useEffect(() => {
-    // Só sincroniza se for um usuário real (não visitante/secret) e tiver cadernos
     const isRealUser = user && user.uid !== 'local-test-uuid' && !isSecret;
     
     if (isRealUser && notebooks.length > 0) {
       const timer = setTimeout(async () => {
         try {
-          console.log('🔄 Sincronizando', notebooks.length, 'cadernos...');
+          const firstNbName = notebooks[0]?.name || 'Sem nome';
+          console.log(`🔄 Sincronizando: "${firstNbName}" e mais ${notebooks.length - 1} cadernos...`);
+          
           await Promise.all(notebooks.map(nb => saveNotebookToFirestore(user.uid, nb)));
-          console.log('✅ Sincronização concluída com sucesso!');
+          console.log('✅ Sincronização concluída!');
         } catch (error: any) {
-          console.error('❌ Falha na sincronização:', error.message || error);
-          if (error.code === 'permission-denied') {
-            console.error('DICA: Verifique se o seu domínio da Vercel está autorizado no Console do Firebase.');
-          }
+          console.error('❌ Erro Firestore:', error.code || error.message);
         }
-      }, 2000);
+      }, 1500); // Reduzido para 1.5s
       return () => clearTimeout(timer);
     }
   }, [notebooks, user, isSecret]);
