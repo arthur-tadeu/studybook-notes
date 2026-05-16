@@ -42,11 +42,15 @@ function App() {
         setUser(userData);
         
         // Carregar cadernos do Firestore
+        console.log('Buscando cadernos para UID:', firebaseUser.uid);
         const fetchedNotebooks = await getUserNotebooksFromFirestore(firebaseUser.uid);
+        console.log('Cadernos recuperados:', fetchedNotebooks.length);
+
         if (fetchedNotebooks.length > 0) {
           setNotebooks(fetchedNotebooks);
         } else {
           // Criar caderno inicial se vazio
+          console.log('Nenhum caderno encontrado, criando inicial...');
           const initial = {
             id: 'notebook-' + Date.now(),
             name: 'Meu Primeiro Caderno',
@@ -87,7 +91,7 @@ function App() {
   useEffect(() => {
     if (user && !isSecret && notebooks.length > 0) {
       const timer = setTimeout(() => {
-        // Sincroniza todos os cadernos (ou poderíamos otimizar para apenas o alterado)
+        console.log('Sincronizando', notebooks.length, 'cadernos com Firestore...');
         notebooks.forEach(nb => saveNotebookToFirestore(user.uid, nb));
       }, 2000);
       return () => clearTimeout(timer);
