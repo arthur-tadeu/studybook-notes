@@ -29,10 +29,12 @@ export const saveNotebookToFirestore = async (uid: string, notebook: Notebook) =
 export const getUserNotebooksFromFirestore = async (uid: string): Promise<Notebook[]> => {
   try {
     const notebooksRef = collection(db, `users/${uid}/notebooks`);
-    const q = query(notebooksRef, orderBy('createdAt', 'desc'));
-    const querySnapshot = await getDocs(q);
+    // Removendo o orderBy da query para evitar erros de índice no Firestore
+    const querySnapshot = await getDocs(notebooksRef);
     
-    return querySnapshot.docs.map(doc => doc.data() as Notebook);
+    const notebooks = querySnapshot.docs.map(doc => doc.data() as Notebook);
+    // Ordena em memória para garantir consistência sem precisar de índices extras
+    return notebooks.sort((a, b) => b.createdAt - a.createdAt);
   } catch (error) {
     console.error('Erro ao buscar cadernos no Firestore:', error);
     return [];
